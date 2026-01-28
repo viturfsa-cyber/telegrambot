@@ -1,3 +1,5 @@
+import asyncio
+from flask import Flask
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -10,13 +12,23 @@ from telegram.ext import (
 # CONFIGURAÇÕES
 # ======================
 
-TOKEN = "8531539087:AAEMqvqtXZS82RmazqdWe9AO2XC9hxDP_hE"
+TOKEN = "AAEMqvqtXZS82RmazqdWe9AO2XC9hxDP_hE"
 
 LINK_SEMANAL = "https://mpago.la/1LEY4CP"
 LINK_MENSAL = "https://mpago.la/2oL26cr"
 
 # ======================
-# /start
+# FLASK APP
+# ======================
+
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "🤖 Bot está rodando no Render!"
+
+# ======================
+# HANDLERS TELEGRAM
 # ======================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,12 +56,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         text=text,
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
-
-# ======================
-# PRÉVIAS (SÓ TEXTO)
-# ======================
 
 async def previas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -76,12 +84,8 @@ async def previas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.message.reply_text(
         text=text,
         reply_markup=reply_markup,
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
-
-# ======================
-# JÁ PAGUEI
-# ======================
 
 async def ja_paguei(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -98,25 +102,25 @@ async def ja_paguei(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await query.message.reply_text(
         text=text,
-        parse_mode="Markdown"
+        parse_mode="MarkdownV2"
     )
 
 # ======================
 # MAIN
 # ======================
 
-def main():
-    app = ApplicationBuilder().token(TOKEN).build()
+async def run_bot():
+    app_tg = ApplicationBuilder().token(TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(previas, pattern="previas"))
-    app.add_handler(CallbackQueryHandler(ja_paguei, pattern="ja_paguei"))
+    app_tg.add_handler(CommandHandler("start", start))
+    app_tg.add_handler(CallbackQueryHandler(previas, pattern="previas"))
+    app_tg.add_handler(CallbackQueryHandler(ja_paguei, pattern="ja_paguei"))
 
     print("🤖 Bot rodando...")
-    app.run_polling()
+    await app_tg.run_polling()
 
 if __name__ == "__main__":
-    main()
-    
-
-
+    loop = asyncio.get_event_loop()
+    loop.create_task(run_bot())
+    # Flask abre a porta para Render detectar
+    app.run(host="0.0.0.0", port=10000)
